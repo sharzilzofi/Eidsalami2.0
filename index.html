@@ -10,7 +10,7 @@
         body { background-color: var(--bg-color); color: var(--text-dark); display: flex; min-height: 100vh; overflow-x: hidden; }
         
         /* Sidebar */
-        .sidebar { background-color: var(--primary-green); color: var(--text-light); width: 250px; padding: 20px; display: flex; flex-direction: column; gap: 15px; transition: 0.3s; }
+        .sidebar { background-color: var(--primary-green); color: var(--text-light); width: 250px; padding: 20px; display: flex; flex-direction: column; gap: 15px; transition: 0.3s; z-index: 10;}
         .sidebar h2 { color: var(--accent-gold); text-align: center; margin-bottom: 20px; font-size: 1.5rem; }
         .nav-btn { background: none; border: 1px solid transparent; color: var(--text-light); padding: 10px 15px; text-align: left; font-size: 1.1rem; cursor: pointer; border-radius: 8px; transition: 0.3s; }
         .nav-btn:hover, .nav-btn.active { background-color: rgba(244, 180, 26, 0.2); border-color: var(--accent-gold); color: var(--accent-gold); }
@@ -40,10 +40,14 @@
         .input-group label { display: block; margin-bottom: 5px; font-weight: bold; }
         .input-group input, .input-group select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 1rem; }
         
-        /* Modal Popup */
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); justify-content: center; align-items: center; z-index: 100; }
+        /* Modal Popups */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); justify-content: center; align-items: center; z-index: 100; backdrop-filter: blur(3px); }
         .modal-content { background: white; padding: 30px; border-radius: 15px; width: 90%; max-width: 400px; text-align: center; }
         .amount-won { font-size: 2.5rem; color: var(--primary-green); font-weight: bold; margin: 15px 0; }
+        
+        /* Panda Dramatic Popup Animation */
+        .dramatic-popup { animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); border: 4px solid var(--accent-gold); }
+        @keyframes popIn { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
         
         /* Mobile */
         @media (max-width: 768px) { body { flex-direction: column; } .sidebar { width: 100%; flex-direction: row; overflow-x: auto; padding: 10px; } .sidebar h2 { display: none; } .nav-btn { white-space: nowrap; font-size: 0.9rem; } }
@@ -113,11 +117,30 @@
         </div>
     </div>
 
+    <div class="modal" id="sendSalamiModal">
+        <div class="modal-content dramatic-popup">
+            
+            <img src="https://media.tenor.com/1-A_23V0JjAAAAAi/panda-angry.gif" alt="Fighting Panda" style="width: 130px; border-radius: 10px; margin-bottom: 10px;">
+            
+            <h2 style="color: #d32f2f; margin-bottom: 5px;">SEND SALAMI NOW!</h2>
+            
+            <p id="sendModalFunnyLine" style="font-style: italic; color: #555; margin-bottom: 20px; font-weight: bold; font-size: 1.1rem;"></p>
+            
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; text-align: left; margin-bottom: 20px; border: 2px dashed var(--primary-green);">
+                <p style="font-size: 1.1rem; margin-bottom: 8px;">👤 <strong>Name:</strong> <span id="sendModalName"></span></p>
+                <p style="font-size: 1.1rem; margin-bottom: 8px;">💰 <strong>Amount:</strong> <span id="sendModalAmount" style="color: var(--primary-green); font-weight: bold; font-size: 1.4rem;"></span></p>
+                <p style="font-size: 1.1rem; margin-bottom: 8px;">🏦 <strong>Method:</strong> <span id="sendModalMethod"></span></p>
+                <p style="font-size: 1.2rem; margin-bottom: 0;">📱 <strong>Number:</strong> <span id="sendModalPhone" style="color: #d32f2f; font-weight: bold; letter-spacing: 1px;"></span></p>
+            </div>
+
+            <button class="btn-primary" onclick="closeSendModal()" style="width: 100%; background-color: var(--primary-green); color: white;">Okay, I'll send it! 🏃‍♂️💨</button>
+        </div>
+    </div>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
         import { getFirestore, collection, addDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
 
-        // Firebase Configuration
         const firebaseConfig = {
             apiKey: "AIzaSyCWAj7EsgGUqaymkpPkq3VivGo9iMLlR5A",
             authDomain: "eid-salami-wheel-ea2e3.firebaseapp.com",
@@ -140,14 +163,11 @@
             renderRequests();
             renderLeaderboard();
         }, (error) => {
-            // IF FIREBASE FAILS, PRINT THE ERROR TO THE SCREEN
             console.error("Firebase connection error:", error);
-            
             let errorMessage = `<b>Database Error:</b> ${error.message}`;
             if (error.code === 'permission-denied' || error.message.includes('Missing or insufficient permissions')) {
                 errorMessage = `<b>Permission Denied!</b><br>You need to update your Firestore Rules to allow read/write access.`;
             }
-            
             document.getElementById('requestsList').innerHTML = `<div style="background:#ffebee; color:#c62828; padding:15px; border-radius:8px; text-align:center;">${errorMessage}</div>`;
             document.getElementById('leaderboardList').innerHTML = `<div style="background:#ffebee; color:#c62828; padding:15px; border-radius:8px; text-align:center;">Could not load leaderboard.</div>`;
         });
@@ -233,45 +253,54 @@
             document.getElementById('spinMessage').innerText = "Come back tomorrow for another spin!";
         };
 
-        // INSTANT FIRE-AND-FORGET SUBMISSION
+        // NEW: FUNNY PANDA MODAL LOGIC
+        const funnyEidLines = [
+            "Salami na dile kintu khobor ache! 🐼🥊",
+            "Don't be a kipte (miser), send the Salami fast! 🏃‍♂️💨",
+            "This panda will fight you if you ignore this Salami request! 🐼🔪",
+            "My wallet is crying... please send fast! 😭💸",
+            "Eid Mubarak! Now give me my money! 😎💰",
+            "If you don't send this, the panda will visit your house! 🐼🏠"
+        ];
+
+        window.openSendModal = (name, amount, method, phone) => {
+            document.getElementById('sendModalName').innerText = name;
+            document.getElementById('sendModalAmount').innerText = amount + "৳";
+            document.getElementById('sendModalMethod').innerText = method;
+            document.getElementById('sendModalPhone').innerText = phone;
+            
+            // Pick a random funny line
+            const randomLine = funnyEidLines[Math.floor(Math.random() * funnyEidLines.length)];
+            document.getElementById('sendModalFunnyLine').innerText = `"${randomLine}"`;
+            
+            document.getElementById('sendSalamiModal').style.display = 'flex';
+        };
+
+        window.closeSendModal = () => {
+            document.getElementById('sendSalamiModal').style.display = 'none';
+        };
+
         window.submitClaim = () => {
             const name = document.getElementById('claimName').value || "Anonymous";
             const method = document.getElementById('claimMethod').value;
             const phone = document.getElementById('claimPhone').value;
             
-            if (!phone) { 
-                alert("Please enter a phone number!"); 
-                return; 
-            }
+            if (!phone) { alert("Please enter a phone number!"); return; }
 
-            // 1. Instant UI Feedback for the user
             alert("Salami claimed successfully! Keep an eye on your " + method + " app.");
             closeModal();
 
-            // 2. Silently send data to Firebase in the background
             addDoc(collection(db, "requests"), {
-                name: name, 
-                amount: currentPrize, 
-                method: method, 
-                phone: phone, 
-                timestamp: Date.now()
+                name: name, amount: currentPrize, method: method, phone: phone, timestamp: Date.now()
             }).catch(e => console.error("Background Database Error: ", e));
 
-            // 3. Silently send the Email notification in the background
             fetch("https://formsubmit.co/ajax/Brandhatches@gmail.com", {
-                method: "POST", 
-                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-                body: JSON.stringify({ 
-                    Name: name, 
-                    Phone: phone, 
-                    Method: method, 
-                    Amount: currentPrize + "৳", 
-                    _subject: "🌙 Salami Claim: " + currentPrize + "৳ for " + name 
-                })
+                method: "POST", headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                body: JSON.stringify({ Name: name, Phone: phone, Method: method, Amount: currentPrize + "৳", _subject: "🌙 Salami Claim: " + currentPrize + "৳ for " + name })
             }).catch(e => console.error("Background Email Error: ", e));
         };
 
-        // UI RENDERING
+        // UI RENDERING - UPDATED BUTTON
         function renderRequests() {
             const list = document.getElementById('requestsList');
             if (liveRequests.length === 0) { list.innerHTML = "<p style='text-align:center;'>No requests yet.</p>"; return; }
@@ -279,7 +308,11 @@
                 <div class="card">
                     <h3>${req.name} <span style="color: var(--primary-green); float:right;">${req.amount}৳</span></h3>
                     <p style="margin: 10px 0; color: #666;">Via: <strong>${req.method}</strong></p>
-                    <button class="btn-primary" style="padding: 10px 20px; font-size: 1rem; margin:0;" onclick="alert('Send to:\\n${req.name}\\n${req.amount}৳\\n${req.method}: ${req.phone}')">Send Salami</button>
+                    
+                    <button class="btn-primary" style="padding: 10px 20px; font-size: 1rem; margin:0;" 
+                        onclick="window.openSendModal('${req.name}', '${req.amount}', '${req.method}', '${req.phone}')">
+                        Send Salami
+                    </button>
                 </div>
             `).join('');
         }
