@@ -24,8 +24,12 @@
         /* Typography & Decor */
         .decorations { text-align: center; font-size: 2rem; margin-bottom: 10px; }
         h1 { color: var(--primary-green); text-align: center; margin-bottom: 5px; }
-        .subtitle { text-align: center; color: #555; margin-bottom: 30px; }
+        .subtitle { text-align: center; color: #555; margin-bottom: 20px; }
         
+        /* Tracker Banner */
+        #claimTracker { display: none; background: #fff3cd; padding: 15px; border-radius: 10px; margin-bottom: 20px; text-align: center; border: 2px dashed #f4b41a; width: 100%; max-width: 600px; animation: popIn 0.5s; }
+        #claimTracker button { background: var(--primary-green); color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 10px; }
+
         /* Wheel UI */
         .wheel-container { position: relative; width: 320px; height: 320px; margin: 0 auto 30px auto; }
         .pointer { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 20px solid transparent; border-right: 20px solid transparent; border-top: 40px solid #d32f2f; z-index: 10; filter: drop-shadow(0 4px 4px rgba(0,0,0,0.3)); }
@@ -35,7 +39,9 @@
         .btn-primary { background-color: var(--accent-gold); color: var(--primary-green); border: none; padding: 15px 30px; font-size: 1.2rem; font-weight: bold; border-radius: 30px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: 0.3s; display: block; margin: 0 auto; }
         .btn-primary:hover { transform: scale(1.05); background-color: #ffd54f; }
         .btn-primary:disabled { background-color: #ccc; cursor: not-allowed; transform: none; }
-        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 15px; border-left: 5px solid var(--primary-green); }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 15px; border-left: 5px solid var(--primary-green); position: relative;}
+        .paid-badge { position: absolute; top: 15px; right: 15px; background: #e8f5e9; color: #2e7d32; padding: 5px 10px; border-radius: 20px; font-weight: bold; font-size: 0.9rem; border: 1px solid #4caf50; }
+
         .input-group { margin-bottom: 15px; }
         .input-group label { display: block; margin-bottom: 5px; font-weight: bold; }
         .input-group input, .input-group select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 1rem; }
@@ -44,8 +50,6 @@
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); justify-content: center; align-items: center; z-index: 100; backdrop-filter: blur(3px); }
         .modal-content { background: white; padding: 30px; border-radius: 15px; width: 90%; max-width: 400px; text-align: center; }
         .amount-won { font-size: 2.5rem; color: var(--primary-green); font-weight: bold; margin: 15px 0; }
-        
-        /* Panda Dramatic Popup Animation */
         .dramatic-popup { animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); border: 4px solid var(--accent-gold); }
         @keyframes popIn { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
         
@@ -64,6 +68,12 @@
 
     <div class="main-content">
         
+        <div id="claimTracker">
+            <h3 style="color: #856404; margin-bottom: 5px;">Waiting for your Salami? 👀</h3>
+            <p style="color: #856404;">If your friend finally sent you the money, confirm it below!</p>
+            <button onclick="confirmReceived()">Yes, I received my Salami! 🎉</button>
+        </div>
+
         <div id="page-wheel" class="page active">
             <div class="decorations">✨🌙🏮🎆</div>
             <h1>Spin the Eid Salami Wheel</h1>
@@ -119,27 +129,22 @@
 
     <div class="modal" id="sendSalamiModal">
         <div class="modal-content dramatic-popup">
-            
             <img src="https://media.tenor.com/1-A_23V0JjAAAAAi/panda-angry.gif" alt="Fighting Panda" style="width: 130px; border-radius: 10px; margin-bottom: 10px;">
-            
             <h2 style="color: #d32f2f; margin-bottom: 5px;">SEND SALAMI NOW!</h2>
-            
             <p id="sendModalFunnyLine" style="font-style: italic; color: #555; margin-bottom: 20px; font-weight: bold; font-size: 1.1rem;"></p>
-            
             <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; text-align: left; margin-bottom: 20px; border: 2px dashed var(--primary-green);">
                 <p style="font-size: 1.1rem; margin-bottom: 8px;">👤 <strong>Name:</strong> <span id="sendModalName"></span></p>
                 <p style="font-size: 1.1rem; margin-bottom: 8px;">💰 <strong>Amount:</strong> <span id="sendModalAmount" style="color: var(--primary-green); font-weight: bold; font-size: 1.4rem;"></span></p>
                 <p style="font-size: 1.1rem; margin-bottom: 8px;">🏦 <strong>Method:</strong> <span id="sendModalMethod"></span></p>
                 <p style="font-size: 1.2rem; margin-bottom: 0;">📱 <strong>Number:</strong> <span id="sendModalPhone" style="color: #d32f2f; font-weight: bold; letter-spacing: 1px;"></span></p>
             </div>
-
             <button class="btn-primary" onclick="closeSendModal()" style="width: 100%; background-color: var(--primary-green); color: white;">Okay, I'll send it! 🏃‍♂️💨</button>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCWAj7EsgGUqaymkpPkq3VivGo9iMLlR5A",
@@ -155,24 +160,47 @@
 
         let liveRequests = [];
 
-        // LIVE DATA SYNC WITH ERROR HANDLING
+        // LIVE DATA SYNC
         const q = query(collection(db, "requests"), orderBy("timestamp", "desc"));
         onSnapshot(q, (snapshot) => {
             liveRequests = [];
             snapshot.forEach((doc) => { liveRequests.push({ id: doc.id, ...doc.data() }); });
             renderRequests();
             renderLeaderboard();
+            checkTrackerStatus(); // Check if user's claim was paid
         }, (error) => {
-            console.error("Firebase connection error:", error);
-            let errorMessage = `<b>Database Error:</b> ${error.message}`;
-            if (error.code === 'permission-denied' || error.message.includes('Missing or insufficient permissions')) {
-                errorMessage = `<b>Permission Denied!</b><br>You need to update your Firestore Rules to allow read/write access.`;
-            }
-            document.getElementById('requestsList').innerHTML = `<div style="background:#ffebee; color:#c62828; padding:15px; border-radius:8px; text-align:center;">${errorMessage}</div>`;
-            document.getElementById('leaderboardList').innerHTML = `<div style="background:#ffebee; color:#c62828; padding:15px; border-radius:8px; text-align:center;">Could not load leaderboard.</div>`;
+            console.error(error);
         });
 
-        // WHEEL LOGIC & PROBABILITIES
+        // USER CONFIRMATION LOGIC
+        function checkTrackerStatus() {
+            const myClaimId = localStorage.getItem('my_claim_id');
+            const tracker = document.getElementById('claimTracker');
+            if (myClaimId) {
+                const myClaim = liveRequests.find(r => r.id === myClaimId);
+                // If claim exists and is NOT paid yet, show the banner
+                if (myClaim && myClaim.status === 'pending') {
+                    tracker.style.display = 'block';
+                } else {
+                    tracker.style.display = 'none';
+                }
+            }
+        }
+
+        window.confirmReceived = async () => {
+            const myClaimId = localStorage.getItem('my_claim_id');
+            if (myClaimId) {
+                try {
+                    await updateDoc(doc(db, "requests", myClaimId), { status: 'paid' });
+                    alert("Awesome! Glad you got your Eidi. Eid Mubarak! 🌙");
+                    document.getElementById('claimTracker').style.display = 'none';
+                } catch (e) {
+                    console.error("Error updating status: ", e);
+                }
+            }
+        };
+
+        // WHEEL LOGIC
         let currentRotation = 0; let currentPrize = 0;
         const prizes = [
             { amount: 1, prob: 9.9998, msg: "😂 Better than nothing! 1৳ Eidi!", emoji: "😂" },
@@ -248,19 +276,14 @@
             }, 4200);
         };
 
-        window.closeModal = () => {
-            document.getElementById('resultModal').style.display = 'none';
-            document.getElementById('spinMessage').innerText = "Come back tomorrow for another spin!";
-        };
+        window.closeModal = () => { document.getElementById('resultModal').style.display = 'none'; };
 
-        // NEW: FUNNY PANDA MODAL LOGIC
         const funnyEidLines = [
             "Salami na dile kintu khobor ache! 🐼🥊",
             "Don't be a kipte (miser), send the Salami fast! 🏃‍♂️💨",
             "This panda will fight you if you ignore this Salami request! 🐼🔪",
             "My wallet is crying... please send fast! 😭💸",
-            "Eid Mubarak! Now give me my money! 😎💰",
-            "If you don't send this, the panda will visit your house! 🐼🏠"
+            "Eid Mubarak! Now give me my money! 😎💰"
         ];
 
         window.openSendModal = (name, amount, method, phone) => {
@@ -268,53 +291,47 @@
             document.getElementById('sendModalAmount').innerText = amount + "৳";
             document.getElementById('sendModalMethod').innerText = method;
             document.getElementById('sendModalPhone').innerText = phone;
-            
-            // Pick a random funny line
-            const randomLine = funnyEidLines[Math.floor(Math.random() * funnyEidLines.length)];
-            document.getElementById('sendModalFunnyLine').innerText = `"${randomLine}"`;
-            
+            document.getElementById('sendModalFunnyLine').innerText = `"${funnyEidLines[Math.floor(Math.random() * funnyEidLines.length)]}"`;
             document.getElementById('sendSalamiModal').style.display = 'flex';
         };
 
-        window.closeSendModal = () => {
-            document.getElementById('sendSalamiModal').style.display = 'none';
-        };
+        window.closeSendModal = () => { document.getElementById('sendSalamiModal').style.display = 'none'; };
 
         window.submitClaim = () => {
             const name = document.getElementById('claimName').value || "Anonymous";
             const method = document.getElementById('claimMethod').value;
             const phone = document.getElementById('claimPhone').value;
-            
             if (!phone) { alert("Please enter a phone number!"); return; }
 
             alert("Salami claimed successfully! Keep an eye on your " + method + " app.");
             closeModal();
 
+            // Save to Firebase and STORE ID LOCALLY
             addDoc(collection(db, "requests"), {
-                name: name, amount: currentPrize, method: method, phone: phone, timestamp: Date.now()
-            }).catch(e => console.error("Background Database Error: ", e));
-
-            fetch("https://formsubmit.co/ajax/Brandhatches@gmail.com", {
-                method: "POST", headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-                body: JSON.stringify({ Name: name, Phone: phone, Method: method, Amount: currentPrize + "৳", _subject: "🌙 Salami Claim: " + currentPrize + "৳ for " + name })
-            }).catch(e => console.error("Background Email Error: ", e));
+                name: name, amount: currentPrize, method: method, phone: phone, timestamp: Date.now(), status: "pending"
+            }).then(docRef => {
+                localStorage.setItem('my_claim_id', docRef.id);
+                checkTrackerStatus();
+            }).catch(e => console.error("Database Error: ", e));
         };
 
-        // UI RENDERING - UPDATED BUTTON
         function renderRequests() {
             const list = document.getElementById('requestsList');
             if (liveRequests.length === 0) { list.innerHTML = "<p style='text-align:center;'>No requests yet.</p>"; return; }
-            list.innerHTML = liveRequests.map(req => `
+            list.innerHTML = liveRequests.map(req => {
+                // If paid, show badge instead of button
+                let actionArea = req.status === 'paid' 
+                    ? `<div style="background: #e8f5e9; color: #2e7d32; padding: 10px; text-align: center; border-radius: 8px; font-weight: bold;">✅ Salami Sent!</div>`
+                    : `<button class="btn-primary" style="padding: 10px 20px; font-size: 1rem; margin:0;" onclick="window.openSendModal('${req.name}', '${req.amount}', '${req.method}', '${req.phone}')">Send Salami</button>`;
+                
+                return `
                 <div class="card">
+                    ${req.status === 'paid' ? '<span class="paid-badge">PAID</span>' : ''}
                     <h3>${req.name} <span style="color: var(--primary-green); float:right;">${req.amount}৳</span></h3>
                     <p style="margin: 10px 0; color: #666;">Via: <strong>${req.method}</strong></p>
-                    
-                    <button class="btn-primary" style="padding: 10px 20px; font-size: 1rem; margin:0;" 
-                        onclick="window.openSendModal('${req.name}', '${req.amount}', '${req.method}', '${req.phone}')">
-                        Send Salami
-                    </button>
-                </div>
-            `).join('');
+                    ${actionArea}
+                </div>`;
+            }).join('');
         }
 
         function renderLeaderboard() {
