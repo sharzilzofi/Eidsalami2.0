@@ -62,6 +62,12 @@
         .dramatic-popup { animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); border: 4px solid var(--accent-gold); }
         @keyframes popIn { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
         
+        /* Privacy Checkbox Box */
+        .privacy-box { text-align: left; margin-bottom: 15px; background: #f8f9fa; padding: 12px; border-radius: 8px; border: 1px dashed var(--primary-green); }
+        .privacy-box label { display: flex; align-items: center; cursor: pointer; color: #333; font-weight: bold; font-size: 1rem;}
+        .privacy-box input[type="checkbox"] { width: 18px; height: 18px; margin-right: 10px; accent-color: var(--primary-green); }
+        .privacy-box p { margin-top: 6px; color: #666; font-size: 0.85rem; line-height: 1.3; }
+
         @media (max-width: 768px) { body { flex-direction: column; } .sidebar { width: 100%; flex-direction: row; overflow-x: auto; padding: 10px; } .sidebar h2 { display: none; } .nav-btn { white-space: nowrap; font-size: 0.9rem; } }
     </style>
 </head>
@@ -142,11 +148,20 @@
                     <label>Phone Number</label>
                     <input type="tel" id="claimPhone" placeholder="01XXXXXXXXX" required>
                 </div>
+                
+                <div class="privacy-box">
+                    <label>
+                        <input type="checkbox" id="claimPublic">
+                        Make my number PUBLIC 🌍
+                    </label>
+                    <p>Your number is hidden by default. If you want to get Salami from random people, check this box! Otherwise, only friends who click your direct share link will see it.</p>
+                </div>
+
                 <button class="btn-primary claim-btn" onclick="submitClaim()" style="width: 100%;">Claim My Salami</button>
             </div>
 
             <div id="trollFormArea" style="display: none; text-align: center;">
-                <button class="btn-primary claim-btn" onclick="closeModal()" style="width: 100%; background-color: #d32f2f; color: white;">I accept my fate 😭</button>
+                <button class="btn-primary claim-btn" onclick="closeModal()" style="width: 100%; background-color: #d32f2f; color: white;">Try Again! 😭</button>
             </div>
         </div>
     </div>
@@ -208,6 +223,7 @@
                     const data = JSON.parse(atob(sharedData));
                     document.getElementById('sharedName').innerText = data.n;
                     document.getElementById('sharedAmount').innerText = data.a + "৳";
+                    // If they visit via share link, the TRUE unmasked phone number is loaded here!
                     document.getElementById('sharedPandaBtn').onclick = () => { window.openSendModal(data.n, data.a, data.m, data.p); };
                     switchPage('shared');
                 } catch(e) { switchPage('wheel'); }
@@ -241,19 +257,21 @@
             if (myClaimId) {
                 try {
                     await updateDoc(doc(db, "requests", myClaimId), { status: 'paid', proofText: customMessage });
-                    alert("Awesome! Glad you got your Eidi. Eid Mubarak! 🌙");
+                    
+                    const myClaim = liveRequests.find(r => r.id === myClaimId);
+                    const amountWon = myClaim ? myClaim.amount : "your";
+                    alert(`BOOYAH! 🤑 You successfully extracted ${amountWon}৳ from them!\n\nYour flex is now live on the board. Eid Mubarak! 🌙`);
+                    
                     document.getElementById('claimTracker').style.display = 'none';
                 } catch (e) { console.error("Error: ", e); }
             }
         };
 
-        // --- NEW WHEEL LOGIC WITH RIGGED TROLL MATH ---
         let currentRotation = 0; let currentPrize = 0;
         
-        // Probabilities sum to 100. Weights sum to 100.
         const prizes = [
-            { amount: 0, prob: 25, weight: 6, msg: "পাওনা খাঔতে চাও আবার সালামি 😂", emoji: "🤡" }, // Index 0: The Troll
-            { amount: 10000, prob: 0, weight: 40, msg: "Error", emoji: "❌" }, // Index 1: The Giant Bait (0% chance)
+            { amount: 0, prob: 25, weight: 6, msg: "পাওনা খাঔতে চাও আবার সালামি 😂", emoji: "🤡" },
+            { amount: 10000, prob: 0, weight: 40, msg: "Error", emoji: "❌" },
             { amount: 1, prob: 10, weight: 5.4, msg: "😂 Better than nothing! 1৳ Eidi!", emoji: "😂" },
             { amount: 2, prob: 10, weight: 5.4, msg: "🥲 You got 2৳... Maybe buy a candy?", emoji: "🥲" },
             { amount: 3, prob: 10, weight: 5.4, msg: "😆 3৳! Your luck is building up!", emoji: "😆" },
@@ -272,10 +290,9 @@
             const centerX = canvas.width / 2; const centerY = canvas.height / 2; const radius = canvas.width / 2;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
-            let currentDrawAngle = -Math.PI / 2; // Start from the top
+            let currentDrawAngle = -Math.PI / 2;
             
             for (let i = 0; i < prizes.length; i++) {
-                // Calculate size based on custom weight
                 let sliceAngle = (prizes[i].weight / 100) * 2 * Math.PI;
                 
                 ctx.beginPath(); 
@@ -290,7 +307,6 @@
                 ctx.rotate(currentDrawAngle + (sliceAngle / 2));
                 ctx.textAlign = "right"; ctx.textBaseline = "middle"; 
                 
-                // Make the 10,000 text massive and gold
                 if (prizes[i].amount === 10000) {
                     ctx.font = "bold 32px 'Segoe UI', sans-serif";
                     ctx.fillStyle = "#f4b41a"; 
@@ -323,7 +339,6 @@
             for (let p of prizes) { cumulativeProb += p.prob; if (rand <= cumulativeProb) { prize = p; break; } }
             currentPrize = prize.amount;
             
-            // Calculate where this slice sits on the 1-100 weight map
             let selectedPrizeIndex = prizes.indexOf(prize);
             let startWeight = 0;
             for (let i = 0; i < selectedPrizeIndex; i++) {
@@ -332,10 +347,6 @@
             
             let targetWeightOffset;
             if (prize.amount === 0) {
-                // THE FAKE OUT: We force it to land at 95% of the 0৳ slice's width.
-                // Because the 0৳ slice is right BEFORE the 10,000৳ slice physically, 
-                // the pointer will slide entirely through the 10,000৳ section, slow to a crawl, 
-                // and just barely drop over the line into the 0৳ section.
                 targetWeightOffset = prize.weight * 0.95; 
             } else {
                 targetWeightOffset = (Math.random() * (prize.weight * 0.6)) + (prize.weight * 0.2);
@@ -347,7 +358,6 @@
             let rotationDiff = (360 - targetAngle) - (currentRotation % 360);
             if (rotationDiff < 0) rotationDiff += 360;
             
-            // Add 4 full dramatic spins
             currentRotation += (4 * 360) + rotationDiff;
             
             document.getElementById('wheelCanvas').style.transform = `rotate(${currentRotation}deg)`;
@@ -360,6 +370,9 @@
                     document.getElementById('resultTitle').style.color = "#d32f2f";
                     document.getElementById('claimFormArea').style.display = 'none';
                     document.getElementById('trollFormArea').style.display = 'block';
+                    
+                    document.getElementById('spinBtn').disabled = false;
+                    document.getElementById('spinMessage').innerText = "Ahaha you got trolled! 😂 Go ahead, spin again to save your honor!";
                 } else {
                     document.getElementById('resultTitle').innerText = "Congratulations!";
                     document.getElementById('resultTitle').style.color = "var(--primary-green)";
@@ -368,6 +381,8 @@
                     else pandaReaction = "🐼🎉";
                     document.getElementById('claimFormArea').style.display = 'block';
                     document.getElementById('trollFormArea').style.display = 'none';
+                    
+                    localStorage.setItem('last_spin_date', new Date().toDateString());
                 }
 
                 document.getElementById('resultEmoji').innerText = pandaReaction;
@@ -375,9 +390,7 @@
                 document.getElementById('resultMessage').innerText = prize.msg;
                 document.getElementById('resultModal').style.display = 'flex';
                 
-                // Save date so they can't retry instantly
-                localStorage.setItem('last_spin_date', new Date().toDateString());
-            }, 4600); // Wait for the new 4.5s animation
+            }, 4600); 
         };
 
         window.closeModal = () => { document.getElementById('resultModal').style.display = 'none'; };
@@ -396,9 +409,14 @@
         window.closeSendModal = () => { document.getElementById('sendSalamiModal').style.display = 'none'; };
 
         window.submitClaim = () => {
-            const name = document.getElementById('claimName').value; const method = document.getElementById('claimMethod').value; const phone = document.getElementById('claimPhone').value;
+            const name = document.getElementById('claimName').value; 
+            const method = document.getElementById('claimMethod').value; 
+            const phone = document.getElementById('claimPhone').value;
+            const isPublic = document.getElementById('claimPublic').checked;
+
             if (!name || !phone) { alert("Please enter your name and phone number!"); return; }
 
+            // The secret Share Link ALWAYS encodes the full real number so their friends can see it
             const secretData = btoa(JSON.stringify({ n: name, a: currentPrize, m: method, p: phone }));
             const shareUrl = window.location.href.split('?')[0] + "?s=" + secretData;
             
@@ -414,7 +432,10 @@
                 <button onclick="closeModal()" style="background: none; border: none; color: #888; cursor: pointer; text-decoration: underline;">Close and view Leaderboard</button>
             `;
 
-            addDoc(collection(db, "requests"), { name: name, amount: currentPrize, method: method, phone: phone, timestamp: Date.now(), status: "pending", proofText: "" }).then(docRef => {
+            // Save the Public Privacy Preference to the database
+            addDoc(collection(db, "requests"), { 
+                name: name, amount: currentPrize, method: method, phone: phone, isPublic: isPublic, timestamp: Date.now(), status: "pending", proofText: "" 
+            }).then(docRef => {
                 localStorage.setItem('my_claim_id', docRef.id); checkTrackerStatus();
             }).catch(e => console.error(e));
 
@@ -431,11 +452,27 @@
                 let actionArea = "";
                 if (req.status === 'paid') {
                     const proofMessage = req.proofText || "Got my Eidi! Thanks! 🎉";
-                    actionArea = `<div style="background: rgba(232, 245, 233, 0.9); color: #2e7d32; padding: 10px; text-align: center; border-radius: 8px; font-weight: bold; margin-bottom: 5px;">✅ Salami Sent!</div><div class="proof-message">💬 "${proofMessage}"</div>`;
+                    actionArea = `
+                        <div style="background: rgba(232, 245, 233, 0.9); color: #2e7d32; padding: 12px; text-align: center; border-radius: 8px; margin-bottom: 5px; border: 2px dashed #4caf50;">
+                            <span style="font-size: 1.5rem;">💸</span><br>
+                            <span style="font-weight: bold; font-size: 1.2rem;">Successfully bagged ${req.amount}৳!</span><br>
+                            <span style="font-size: 0.9rem; color: #555;">They actually paid up! 😲</span>
+                        </div>
+                        <div class="proof-message">💬 "${proofMessage}"</div>
+                    `;
                 } else {
-                    actionArea = `<button class="btn-primary" style="padding: 10px 20px; font-size: 1rem; margin:0;" onclick="window.openSendModal('${req.name}', '${req.amount}', '${req.method}', '${req.phone}')">Send Salami 🐼</button>`;
+                    // Check if it's public. If not, mask the number. If phone is invalid/short, hide it safely.
+                    let displayPhone = req.phone || "Unknown";
+                    if (!req.isPublic) {
+                        if(displayPhone.length >= 11) {
+                            displayPhone = displayPhone.substring(0, 3) + "*****" + displayPhone.substring(displayPhone.length - 3);
+                        } else {
+                            displayPhone = "Hidden (Ask them!)";
+                        }
+                    }
+                    actionArea = `<button class="btn-primary" style="padding: 10px 20px; font-size: 1rem; margin:0;" onclick="window.openSendModal('${req.name}', '${req.amount}', '${req.method}', '${displayPhone}')">Send Salami 🐼</button>`;
                 }
-                return `<div class="card">${req.status === 'paid' ? '<span class="paid-badge">PAID</span>' : ''}<h3>${req.name} <span style="color: var(--accent-gold); float:right;">${req.amount}৳</span></h3><p style="margin: 10px 0; color: #ddd;">Via: <strong>${req.method}</strong></p>${actionArea}</div>`;
+                return `<div class="card">${req.status === 'paid' ? '<span class="paid-badge">PAID ✅</span>' : ''}<h3>${req.name} <span style="color: var(--accent-gold); float:right;">${req.amount}৳</span></h3><p style="margin: 10px 0; color: #ddd;">Via: <strong>${req.method}</strong></p>${actionArea}</div>`;
             }).join('');
         }
 
@@ -452,4 +489,4 @@
         }
     </script>
 </body>
-    </html>
+</html>
