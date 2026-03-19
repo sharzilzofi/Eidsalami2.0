@@ -132,13 +132,24 @@
 
         let liveRequests = [];
 
-        // LIVE DATA SYNC
+        // LIVE DATA SYNC WITH ERROR HANDLING
         const q = query(collection(db, "requests"), orderBy("timestamp", "desc"));
         onSnapshot(q, (snapshot) => {
             liveRequests = [];
             snapshot.forEach((doc) => { liveRequests.push({ id: doc.id, ...doc.data() }); });
             renderRequests();
             renderLeaderboard();
+        }, (error) => {
+            // IF FIREBASE FAILS, PRINT THE ERROR TO THE SCREEN
+            console.error("Firebase connection error:", error);
+            
+            let errorMessage = `<b>Database Error:</b> ${error.message}`;
+            if (error.code === 'permission-denied' || error.message.includes('Missing or insufficient permissions')) {
+                errorMessage = `<b>Permission Denied!</b><br>You need to update your Firestore Rules to allow read/write access.`;
+            }
+            
+            document.getElementById('requestsList').innerHTML = `<div style="background:#ffebee; color:#c62828; padding:15px; border-radius:8px; text-align:center;">${errorMessage}</div>`;
+            document.getElementById('leaderboardList').innerHTML = `<div style="background:#ffebee; color:#c62828; padding:15px; border-radius:8px; text-align:center;">Could not load leaderboard.</div>`;
         });
 
         // WHEEL LOGIC & PROBABILITIES
