@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eid Salami Wheel</title>
+    <style>
+        /* All your exact same CSS from before */
+        :root { --primary-green: #0b4a26; --accent-gold: #f4b41a; --bg-color: #f0fdf4; --text-dark: #1a1a1a; --text-light: #ffffff; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text-dark); display: flex; min-height: 100vh; overflow-x: hidden; }
+        .sidebar { background-color: var(--primary-green); color: var(--text-light); width: 250px; padding: 20px; display: flex; flex-direction: column; gap: 15px; transition: 0.3s; }
+        .sidebar h2 { color: var(--accent-gold); text-align: center; margin-bottom: 20px; font-size: 1.5rem; }
+        .nav-btn { background: none; border: 1px solid transparent; color: var(--text-light); padding: 10px 15px; text-align: left; font-size: 1.1rem; cursor: pointer; border-radius: 8px; transition: 0.3s; }
+        .nav-btn:hover, .nav-btn.active { background-color: rgba(244, 180, 26, 0.2); border-color: var(--accent-gold); color: var(--accent-gold); }
+        .main-content { flex: 1; padding: 20px; display: flex; flex-direction: column; align-items: center; position: relative; }
+        .page { display: none; width: 100%; max-width: 600px; animation: fadeIn 0.5s ease-in-out; }
+        .page.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .decorations { text-align: center; font-size: 2rem; margin-bottom: 10px; }
+        h1 { color: var(--primary-green); text-align: center; margin-bottom: 5px; }
+        .subtitle { text-align: center; color: #555; margin-bottom: 30px; }
+        .wheel-container { position: relative; width: 320px; height: 320px; margin: 0 auto 30px auto; }
+        .pointer { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 20px solid transparent; border-right: 20px solid transparent; border-top: 40px solid #d32f2f; z-index: 10; filter: drop-shadow(0 4px 4px rgba(0,0,0,0.3)); }
+        canvas { width: 100%; height: 100%; border-radius: 50%; border: 8px solid var(--accent-gold); box-shadow: 0 0 20px rgba(0,0,0,0.3); transition: transform 4s cubic-bezier(0.17, 0.67, 0.1, 1); }
+        .btn-primary { background-color: var(--accent-gold); color: var(--primary-green); border: none; padding: 15px 30px; font-size: 1.2rem; font-weight: bold; border-radius: 30px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: 0.3s; display: block; margin: 0 auto; }
+        .btn-primary:hover { transform: scale(1.05); background-color: #ffd54f; }
+        .btn-primary:disabled { background-color: #ccc; cursor: not-allowed; transform: none; }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 15px; border-left: 5px solid var(--primary-green); }
+        .input-group { margin-bottom: 15px; }
+        .input-group label { display: block; margin-bottom: 5px; font-weight: bold; }
+        .input-group input, .input-group select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 1rem; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); justify-content: center; align-items: center; z-index: 100; }
+        .modal-content { background: white; padding: 30px; border-radius: 15px; width: 90%; max-width: 400px; text-align: center; }
+        .amount-won { font-size: 2.5rem; color: var(--primary-green); font-weight: bold; margin: 15px 0; }
+        @media (max-width: 768px) { body { flex-direction: column; } .sidebar { width: 100%; flex-direction: row; overflow-x: auto; padding: 10px; } .sidebar h2 { display: none; } .nav-btn { white-space: nowrap; font-size: 0.9rem; } }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <h2>🌙 Eid Salami</h2>
+        <button class="nav-btn active" onclick="switchPage('wheel')">🎡 Spin Wheel</button>
+        <button class="nav-btn" onclick="switchPage('requests')">💰 Salami Requests</button>
+        <button class="nav-btn" onclick="switchPage('leaderboard')">🏆 Luckiest Winners</button>
+    </div>
+
+    <div class="main-content">
+        <div id="page-wheel" class="page active">
+            <div class="decorations">✨🌙🏮🎆</div>
+            <h1>Spin the Eid Salami Wheel</h1>
+            <p class="subtitle">Maybe you'll hit the 500৳ Jackpot today! 😉</p>
+            <div class="wheel-container">
+                <div class="pointer"></div>
+                <canvas id="wheelCanvas" width="400" height="400"></canvas>
+            </div>
+            <button id="spinBtn" class="btn-primary" onclick="spinWheel()">Spin for Eidi!</button>
+            <p id="spinMessage" style="text-align: center; margin-top: 15px; color: #d32f2f; font-weight: bold;"></p>
+        </div>
+
+        <div id="page-requests" class="page">
+            <h1>People Requesting Salami</h1>
+            <p class="subtitle">Be generous this Eid! Send salami directly via bKash or Nagad.</p>
+            <div id="requestsList">Loading live data...</div>
+        </div>
+
+        <div id="page-leaderboard" class="page">
+            <h1>🏆 Luckiest Players</h1>
+            <p class="subtitle">The biggest salami winners so far!</p>
+            <div id="leaderboardList">Loading live data...</div>
+        </div>
+    </div>
+
+    <div class="modal" id="resultModal">
+        <div class="modal-content">
+            <h2 id="resultTitle">Congratulations!</h2>
+            <p id="resultEmoji" style="font-size: 3rem;">😆</p>
+            <div class="amount-won"><span id="wonAmount">0</span>৳</div>
+            <p id="resultMessage" style="margin-bottom: 20px;">You got Eidi!</p>
+            <div style="text-align: left;">
+                <div class="input-group">
+                    <label>Name (Optional)</label>
+                    <input type="text" id="claimName" placeholder="Your name">
+                </div>
+                <div class="input-group">
+                    <label>Payment Method</label>
+                    <select id="claimMethod">
+                        <option value="bKash">bKash</option>
+                        <option value="Nagad">Nagad</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>Phone Number</label>
+                    <input type="tel" id="claimPhone" placeholder="01XXXXXXXXX" required>
+                </div>
+                <button class="btn-primary claim-btn" onclick="submitClaim()" style="width: 100%;">Claim My Salami</button>
+                <button onclick="closeModal()" style="margin-top: 15px; background: none; border: none; color: #888; cursor: pointer; width: 100%;">Skip</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+
+        // Your Firebase config
+        const firebaseConfig = {
+            apiKey: "AIzaSyCWAj7EsgGUqaymkpPkq3VivGo9iMLlR5A",
+            authDomain: "eid-salami-wheel-ea2e3.firebaseapp.com",
+            projectId: "eid-salami-wheel-ea2e3",
+            storageBucket: "eid-salami-wheel-ea2e3.firebasestorage.app",
+            messagingSenderId: "956265999445",
+            appId: "1:956265999445:web:f7ba7a6bee0ee2e1c678dc"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        let liveRequests = [];
+
+        // LIVE DATA SYNC
+        const q = query(collection(db, "requests"), orderBy("timestamp", "desc"));
+        onSnapshot(q, (snapshot) => {
+            liveRequests = [];
+            snapshot.forEach((doc) => { liveRequests.push({ id: doc.id, ...doc.data() }); });
+            renderRequests();
+            renderLeaderboard();
+        });
+
+        // WHEEL LOGIC
+        let currentRotation = 0; let currentPrize = 0;
+        const prizes = [
+            { amount: 1, prob: 9.9998, msg: "😂 Better than nothing! 1৳ Eidi!", emoji: "😂" },
+            { amount: 2, prob: 9.9998, msg: "🥲 You got 2৳... Maybe buy a candy?", emoji: "🥲" },
+            { amount: 3, prob: 9.9998, msg: "😆 3৳! Your luck is building up!", emoji: "😆" },
+            { amount: 4, prob: 9.9998, msg: "🙂 4৳! Almost enough for a tea!", emoji: "🙂" },
+            { amount: 5, prob: 9.9998, msg: "😄 A solid 5৳! Happy Eid!", emoji: "😄" },
+            { amount: 6, prob: 9.9998, msg: "🎉 6৳! Moving up in the world!", emoji: "🎉" },
+            { amount: 7, prob: 9.9998, msg: "😎 Lucky number 7৳!", emoji: "😎" },
+            { amount: 8, prob: 9.9998, msg: "😁 8৳ for you today!", emoji: "😁" },
+            { amount: 9, prob: 9.9998, msg: "😃 9৳! So close to double digits!", emoji: "😃" },
+            { amount: 10, prob: 9.9998, msg: "🔥 The big 10৳! Don't spend it all at once!", emoji: "🔥" },
+            { amount: 100, prob: 0.001, msg: "🤯 WAIT, WHAT?! You actually hit 100৳!", emoji: "🤯" },
+            { amount: 500, prob: 0.001, msg: "🤑 ULTIMATE JACKPOT!!! 500৳!!!", emoji: "🤑" }
+        ];
+        const sliceColors = ['#0b4a26', '#1abc9c', '#2ecc71', '#f39c12', '#3498db', '#9b59b6', '#e67e22', '#16a085', '#27ae60', '#2980b9', '#d35400', '#c0392b'];
+
+        function drawWheel() {
+            const canvas = document.getElementById('wheelCanvas'); const ctx = canvas.getContext('2d');
+            const centerX = canvas.width / 2; const centerY = canvas.height / 2; const radius = canvas.width / 2;
+            const sliceAngle = (2 * Math.PI) / prizes.length;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (let i = 0; i < prizes.length; i++) {
+                const startAngle = (i * sliceAngle) - (Math.PI / 2) - (sliceAngle / 2);
+                ctx.beginPath(); ctx.moveTo(centerX, centerY); ctx.arc(centerX, centerY, radius, startAngle, startAngle + sliceAngle);
+                ctx.closePath(); ctx.fillStyle = sliceColors[i]; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = "#ffffff"; ctx.stroke();
+                ctx.save(); ctx.translate(centerX, centerY); ctx.rotate(startAngle + (sliceAngle / 2));
+                ctx.textAlign = "right"; ctx.textBaseline = "middle"; ctx.fillStyle = "#ffffff"; ctx.font = "bold 24px 'Segoe UI', sans-serif";
+                ctx.shadowColor = "rgba(0,0,0,0.8)"; ctx.shadowBlur = 4; ctx.shadowOffsetX = 1; ctx.shadowOffsetY = 1;
+                ctx.fillText(prizes[i].amount + "৳", radius - 20, 0); ctx.restore();
+            }
+        }
+
+        window.onload = () => { drawWheel(); checkSpunToday(); };
+
+        window.switchPage = (pageId) => {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('page-' + pageId).classList.add('active');
+            event.currentTarget.classList.add('active');
+        };
+
+        function checkSpunToday() {
+            if (localStorage.getItem('last_spin_date') === new Date().toDateString()) {
+                document.getElementById('spinBtn').disabled = true;
+                document.getElementById('spinMessage').innerText = "You already tried your Eid luck today. Come back tomorrow!";
+                return true;
+            } return false;
+        }
+
+        window.spinWheel = () => {
+            if (checkSpunToday()) return;
+            document.getElementById('spinBtn').disabled = true;
+            
+            let rand = Math.random() * 100, cumulativeProb = 0, prize = prizes[0];
+            for (let p of prizes) { cumulativeProb += p.prob; if (rand <= cumulativeProb) { prize = p; break; } }
+            currentPrize = prize.amount;
+            
+            const sliceDegrees = 360 / prizes.length;
+            const targetAngle = 360 - (prizes.indexOf(prize) * sliceDegrees);
+            const randomOffset = Math.floor(Math.random() * 20) - 10;
+            let rotationDiff = (targetAngle + randomOffset) - (currentRotation % 360);
+            if (rotationDiff < 0) rotationDiff += 360;
+            currentRotation += (5 * 360) + rotationDiff;
+            
+            document.getElementById('wheelCanvas').style.transform = `rotate(${currentRotation}deg)`;
+            setTimeout(() => {
+                document.getElementById('wonAmount').innerText = prize.amount;
+                document.getElementById('resultMessage').innerText = prize.msg;
+                document.getElementById('resultEmoji').innerText = prize.emoji;
+                document.getElementById('resultModal').style.display = 'flex';
+                localStorage.setItem('last_spin_date', new Date().toDateString());
+            }, 4200);
+        };
+
+        window.closeModal = () => {
+            document.getElementById('resultModal').style.display = 'none';
+            document.getElementById('spinMessage').innerText = "Come back tomorrow for another spin!";
+        };
+
+        // SAVE TO FIREBASE & EMAIL
+        window.submitClaim = async () => {
+            const name = document.getElementById('claimName').value || "Anonymous";
+            const method = document.getElementById('claimMethod').value;
+            const phone = document.getElementById('claimPhone').value;
+            if (!phone) { alert("Please enter a phone number!"); return; }
+
+            const submitBtn = document.querySelector('.claim-btn');
+            const originalText = submitBtn.innerText;
+            submitBtn.innerText = "Saving to Cloud..."; submitBtn.disabled = true;
+
+            try {
+                // 1. Save to Firebase
+                await addDoc(collection(db, "requests"), {
+                    name: name, amount: currentPrize, method: method, phone: phone, timestamp: Date.now()
+                });
+
+                // 2. Send Email
+                fetch("https://formsubmit.co/ajax/Brandhatches@gmail.com", {
+                    method: "POST", headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                    body: JSON.stringify({ Name: name, Phone: phone, Method: method, Amount: currentPrize + "৳", _subject: "🌙 Salami Claim: " + currentPrize + "৳" })
+                });
+
+                alert("Salami claimed successfully!");
+                submitBtn.innerText = originalText; submitBtn.disabled = false; closeModal();
+            } catch (e) {
+                console.error("Error adding document: ", e);
+                alert("Database error. Please try again.");
+                submitBtn.innerText = originalText; submitBtn.disabled = false;
+            }
+        };
+
+        function renderRequests() {
+            const list = document.getElementById('requestsList');
+            if (liveRequests.length === 0) { list.innerHTML = "<p style='text-align:center;'>No requests yet.</p>"; return; }
+            list.innerHTML = liveRequests.map(req => `
+                <div class="card">
+                    <h3>${req.name} <span style="color: var(--primary-green); float:right;">${req.amount}৳</span></h3>
+                    <p style="margin: 10px 0; color: #666;">Via: <strong>${req.method}</strong></p>
+                    <button class="btn-primary" style="padding: 10px 20px; font-size: 1rem; margin:0;" onclick="alert('Send to:\\n${req.name}\\n${req.amount}৳\\n${req.method}: ${req.phone}')">Send Salami</button>
+                </div>
+            `).join('');
+        }
+
+        function renderLeaderboard() {
+            const list = document.getElementById('leaderboardList');
+            let sorted = [...liveRequests].sort((a, b) => b.amount - a.amount);
+            if (sorted.length === 0) { list.innerHTML = "<p style='text-align:center;'>No winners yet.</p>"; return; }
+            list.innerHTML = sorted.slice(0, 10).map((req, index) => `
+                <div class="card" style="display:flex; justify-content: space-between; align-items: center;">
+                    <div style="font-size: 1.2rem; font-weight: bold;">${index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '🎖️'} ${req.name}</div>
+                    <div style="font-size: 1.3rem; color: var(--accent-gold); font-weight: bold;">${req.amount}৳</div>
+                </div>
+            `).join('');
+        }
+    </script>
+</body>
+</html>
