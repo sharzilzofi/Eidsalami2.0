@@ -27,8 +27,26 @@
         .subtitle { text-align: center; color: #555; margin-bottom: 20px; }
         
         /* Tracker Banner */
-        #claimTracker { display: none; background: #fff3cd; padding: 15px; border-radius: 10px; margin-bottom: 20px; text-align: center; border: 2px dashed #f4b41a; width: 100%; max-width: 600px; animation: popIn 0.5s; }
-        #claimTracker button { background: var(--primary-green); color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 10px; }
+        #claimTracker { display: none; background: #fff3cd; padding: 20px; border-radius: 10px; margin-bottom: 20px; text-align: center; border: 2px dashed #f4b41a; width: 100%; max-width: 600px; animation: popIn 0.5s; box-shadow: 0 4px 10px rgba(0,0,0,0.1);}
+        #claimTracker input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; margin: 15px 0; font-size: 1rem; }
+        #claimTracker button { background: var(--primary-green); color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; font-size: 1.1rem;}
+
+        /* Animated Proof Message */
+        .proof-message {
+            margin-top: 15px;
+            padding: 10px;
+            background: #e8f5e9;
+            border-left: 4px solid #2ecc71;
+            border-radius: 0 8px 8px 0;
+            font-style: italic;
+            font-weight: bold;
+            color: #0b4a26;
+            animation: pulseGlow 2s infinite alternate;
+        }
+        @keyframes pulseGlow {
+            0% { transform: scale(1); box-shadow: 0 0 0px rgba(46, 204, 113, 0); }
+            100% { transform: scale(1.02); box-shadow: 0 0 10px rgba(46, 204, 113, 0.4); }
+        }
 
         /* Wheel UI */
         .wheel-container { position: relative; width: 320px; height: 320px; margin: 0 auto 30px auto; }
@@ -70,7 +88,8 @@
         
         <div id="claimTracker">
             <h3 style="color: #856404; margin-bottom: 5px;">Waiting for your Salami? 👀</h3>
-            <p style="color: #856404;">If your friend finally sent you the money, confirm it below!</p>
+            <p style="color: #856404;">If your friend finally sent you the money, confirm it so everyone knows!</p>
+            <input type="text" id="proofMessageInput" placeholder="Write a message (e.g. 'Got my money! Thanks bro! 😂')">
             <button onclick="confirmReceived()">Yes, I received my Salami! 🎉</button>
         </div>
 
@@ -189,16 +208,13 @@
             
             if (sharedData) {
                 try {
-                    // Decode the secret URL info
                     const data = JSON.parse(atob(sharedData));
                     document.getElementById('sharedName').innerText = data.n;
                     document.getElementById('sharedAmount').innerText = data.a;
                     
-                    // Attach Panda Modal to the button
                     document.getElementById('sharedPandaBtn').onclick = () => {
                         window.openSendModal(data.n, data.a, data.m, data.p);
                     };
-                    
                     switchPage('shared');
                 } catch(e) {
                     console.error("Invalid share link", e);
@@ -210,7 +226,6 @@
         };
 
         window.removeShareAndSpin = () => {
-            // Remove the ?s= data from URL without reloading the page
             window.history.replaceState({}, document.title, window.location.pathname);
             switchPage('wheel');
         };
@@ -220,13 +235,12 @@
             document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
             document.getElementById('page-' + pageId).classList.add('active');
             
-            // Highlight the correct sidebar button
             if(pageId === 'wheel' || pageId === 'shared') document.getElementById('navWheel').classList.add('active');
             if(pageId === 'requests') document.getElementById('navRequests').classList.add('active');
             if(pageId === 'leaderboard') document.getElementById('navLeaderboard').classList.add('active');
         };
 
-        // USER CONFIRMATION LOGIC
+        // USER CONFIRMATION & PROOF LOGIC
         function checkTrackerStatus() {
             const myClaimId = localStorage.getItem('my_claim_id');
             const tracker = document.getElementById('claimTracker');
@@ -239,9 +253,16 @@
 
         window.confirmReceived = async () => {
             const myClaimId = localStorage.getItem('my_claim_id');
+            // Grab the message they typed, or use a default one!
+            let customMessage = document.getElementById('proofMessageInput').value.trim();
+            if (customMessage === "") customMessage = "Got my Eidi! Thanks! 🎉";
+
             if (myClaimId) {
                 try {
-                    await updateDoc(doc(db, "requests", myClaimId), { status: 'paid' });
+                    await updateDoc(doc(db, "requests", myClaimId), { 
+                        status: 'paid',
+                        proofText: customMessage // Save the proof text to the database!
+                    });
                     alert("Awesome! Glad you got your Eidi. Eid Mubarak! 🌙");
                     document.getElementById('claimTracker').style.display = 'none';
                 } catch (e) { console.error("Error updating status: ", e); }
@@ -342,30 +363,24 @@
             const phone = document.getElementById('claimPhone').value;
             if (!name || !phone) { alert("Please enter your name and phone number!"); return; }
 
-            // 1. Generate the Share URL secretly mapping their data
             const secretData = btoa(JSON.stringify({ n: name, a: currentPrize, m: method, p: phone }));
             const shareUrl = window.location.href.split('?')[0] + "?s=" + secretData;
             const fbShareLink = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
 
-            // 2. Transform the Modal to the "Share" screen
             document.getElementById('modalDynamicContent').innerHTML = `
                 <h2 style="color: var(--primary-green);">🎉 Claimed!</h2>
                 <p style="margin: 15px 0 25px 0; font-size: 1.1rem;">Your Salami is secured in the database. Now challenge your friends to pay you!</p>
-                
                 <button onclick="window.open('${fbShareLink}', '_blank')" class="btn-primary" style="background: #1877F2; color: white; margin-bottom: 10px; width: 100%; font-size: 1rem;">
                     💙 Share on Facebook
                 </button>
-                
                 <button onclick="navigator.clipboard.writeText('${shareUrl}'); alert('Link copied! Send it in Messenger/WhatsApp.');" class="btn-primary" style="background: #333; color: white; margin-bottom: 20px; width: 100%; font-size: 1rem;">
                     🔗 Copy Link to Clipboard
                 </button>
-
                 <button onclick="closeModal()" style="background: none; border: none; color: #888; cursor: pointer; text-decoration: underline;">Close and view Leaderboard</button>
             `;
 
-            // 3. Save to Firebase
             addDoc(collection(db, "requests"), {
-                name: name, amount: currentPrize, method: method, phone: phone, timestamp: Date.now(), status: "pending"
+                name: name, amount: currentPrize, method: method, phone: phone, timestamp: Date.now(), status: "pending", proofText: ""
             }).then(docRef => {
                 localStorage.setItem('my_claim_id', docRef.id);
                 checkTrackerStatus();
@@ -377,13 +392,24 @@
             }).catch(e => console.error("Email Error: ", e));
         };
 
+        // UPDATED: UI RENDERING WITH ANIMATED TEXT
         function renderRequests() {
             const list = document.getElementById('requestsList');
             if (liveRequests.length === 0) { list.innerHTML = "<p style='text-align:center;'>No requests yet.</p>"; return; }
             list.innerHTML = liveRequests.map(req => {
-                let actionArea = req.status === 'paid' 
-                    ? `<div style="background: #e8f5e9; color: #2e7d32; padding: 10px; text-align: center; border-radius: 8px; font-weight: bold;">✅ Salami Sent!</div>`
-                    : `<button class="btn-primary" style="padding: 10px 20px; font-size: 1rem; margin:0;" onclick="window.openSendModal('${req.name}', '${req.amount}', '${req.method}', '${req.phone}')">Send Salami</button>`;
+                
+                // If the user has been paid, show the badge AND their animated text proof!
+                let actionArea = "";
+                if (req.status === 'paid') {
+                    // Grab their custom text, or use default if empty
+                    const proofMessage = req.proofText || "Got my Eidi! Thanks! 🎉";
+                    actionArea = `
+                        <div style="background: #e8f5e9; color: #2e7d32; padding: 10px; text-align: center; border-radius: 8px; font-weight: bold; margin-bottom: 5px;">✅ Salami Sent!</div>
+                        <div class="proof-message">💬 "${proofMessage}"</div>
+                    `;
+                } else {
+                    actionArea = `<button class="btn-primary" style="padding: 10px 20px; font-size: 1rem; margin:0;" onclick="window.openSendModal('${req.name}', '${req.amount}', '${req.method}', '${req.phone}')">Send Salami</button>`;
+                }
                 
                 return `
                 <div class="card">
