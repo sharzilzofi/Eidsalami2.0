@@ -32,21 +32,13 @@
         #claimTracker button { background: var(--primary-green); color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; font-size: 1.1rem;}
 
         /* Animated Proof Message */
-        .proof-message {
-            margin-top: 15px;
-            padding: 10px;
-            background: #e8f5e9;
-            border-left: 4px solid #2ecc71;
-            border-radius: 0 8px 8px 0;
-            font-style: italic;
-            font-weight: bold;
-            color: #0b4a26;
-            animation: pulseGlow 2s infinite alternate;
-        }
-        @keyframes pulseGlow {
-            0% { transform: scale(1); box-shadow: 0 0 0px rgba(46, 204, 113, 0); }
-            100% { transform: scale(1.02); box-shadow: 0 0 10px rgba(46, 204, 113, 0.4); }
-        }
+        .proof-message { margin-top: 15px; padding: 10px; background: #e8f5e9; border-left: 4px solid #2ecc71; border-radius: 0 8px 8px 0; font-style: italic; font-weight: bold; color: #0b4a26; animation: pulseGlow 2s infinite alternate; }
+        @keyframes pulseGlow { 0% { transform: scale(1); box-shadow: 0 0 0px rgba(46, 204, 113, 0); } 100% { transform: scale(1.02); box-shadow: 0 0 10px rgba(46, 204, 113, 0.4); } }
+
+        /* Running Panda Animation */
+        .panda-track { width: 100%; height: 50px; overflow: hidden; position: relative; background: #f0fdf4; border-radius: 10px; margin-bottom: 15px; border: 1px solid #c8e6c9;}
+        .running-panda { position: absolute; font-size: 2rem; white-space: nowrap; animation: runPanda 3s linear infinite; top: 5px;}
+        @keyframes runPanda { 0% { left: -50%; transform: rotate(-5deg); } 50% { transform: rotate(5deg); } 100% { left: 100%; transform: rotate(-5deg); } }
 
         /* Wheel UI */
         .wheel-container { position: relative; width: 320px; height: 320px; margin: 0 auto 30px auto; }
@@ -158,7 +150,11 @@
 
     <div class="modal" id="sendSalamiModal">
         <div class="modal-content dramatic-popup">
-            <img src="https://media.tenor.com/1-A_23V0JjAAAAAi/panda-angry.gif" alt="Fighting Panda" style="width: 130px; border-radius: 10px; margin-bottom: 10px;">
+            
+            <div class="panda-track">
+                <div class="running-panda">🐼💨💰 <span style="font-size: 1rem; color: #2e7d32;">GIVE SALAMI!</span></div>
+            </div>
+
             <h2 style="color: #d32f2f; margin-bottom: 5px;">SEND SALAMI NOW!</h2>
             <p id="sendModalFunnyLine" style="font-style: italic; color: #555; margin-bottom: 20px; font-weight: bold; font-size: 1.1rem;"></p>
             <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; text-align: left; margin-bottom: 20px; border: 2px dashed var(--primary-green);">
@@ -210,7 +206,7 @@
                 try {
                     const data = JSON.parse(atob(sharedData));
                     document.getElementById('sharedName').innerText = data.n;
-                    document.getElementById('sharedAmount').innerText = data.a;
+                    document.getElementById('sharedAmount').innerText = data.a + "৳";
                     
                     document.getElementById('sharedPandaBtn').onclick = () => {
                         window.openSendModal(data.n, data.a, data.m, data.p);
@@ -253,7 +249,6 @@
 
         window.confirmReceived = async () => {
             const myClaimId = localStorage.getItem('my_claim_id');
-            // Grab the message they typed, or use a default one!
             let customMessage = document.getElementById('proofMessageInput').value.trim();
             if (customMessage === "") customMessage = "Got my Eidi! Thanks! 🎉";
 
@@ -261,7 +256,7 @@
                 try {
                     await updateDoc(doc(db, "requests", myClaimId), { 
                         status: 'paid',
-                        proofText: customMessage // Save the proof text to the database!
+                        proofText: customMessage
                     });
                     alert("Awesome! Glad you got your Eidi. Eid Mubarak! 🌙");
                     document.getElementById('claimTracker').style.display = 'none';
@@ -365,17 +360,28 @@
 
             const secretData = btoa(JSON.stringify({ n: name, a: currentPrize, m: method, p: phone }));
             const shareUrl = window.location.href.split('?')[0] + "?s=" + secretData;
-            const fbShareLink = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
+            
+            // NEW: MYSTERIOUS SHARE TEXT
+            const mysteriousText = "EID MUBARAK! 🌙 I just spun the Eid Salami Wheel! Click to see what I got and send me my Salami! 🐼💸";
+            
+            // Create FB share link (Some apps auto-pull the quote if supported)
+            const fbShareLink = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}&quote=${encodeURIComponent(mysteriousText)}`;
+            
+            // Format WhatsApp/Clipboard text
+            const clipboardText = `${mysteriousText}\n\nPlay here: ${shareUrl}`;
 
             document.getElementById('modalDynamicContent').innerHTML = `
                 <h2 style="color: var(--primary-green);">🎉 Claimed!</h2>
                 <p style="margin: 15px 0 25px 0; font-size: 1.1rem;">Your Salami is secured in the database. Now challenge your friends to pay you!</p>
+                
                 <button onclick="window.open('${fbShareLink}', '_blank')" class="btn-primary" style="background: #1877F2; color: white; margin-bottom: 10px; width: 100%; font-size: 1rem;">
                     💙 Share on Facebook
                 </button>
-                <button onclick="navigator.clipboard.writeText('${shareUrl}'); alert('Link copied! Send it in Messenger/WhatsApp.');" class="btn-primary" style="background: #333; color: white; margin-bottom: 20px; width: 100%; font-size: 1rem;">
-                    🔗 Copy Link to Clipboard
+                
+                <button onclick="navigator.clipboard.writeText(\`${clipboardText}\`); alert('Fun message and link copied! Send it in WhatsApp/Messenger! 🐼');" class="btn-primary" style="background: #25D366; color: white; margin-bottom: 20px; width: 100%; font-size: 1rem;">
+                    💬 Copy WhatsApp Message
                 </button>
+
                 <button onclick="closeModal()" style="background: none; border: none; color: #888; cursor: pointer; text-decoration: underline;">Close and view Leaderboard</button>
             `;
 
@@ -392,23 +398,20 @@
             }).catch(e => console.error("Email Error: ", e));
         };
 
-        // UPDATED: UI RENDERING WITH ANIMATED TEXT
         function renderRequests() {
             const list = document.getElementById('requestsList');
             if (liveRequests.length === 0) { list.innerHTML = "<p style='text-align:center;'>No requests yet.</p>"; return; }
             list.innerHTML = liveRequests.map(req => {
                 
-                // If the user has been paid, show the badge AND their animated text proof!
                 let actionArea = "";
                 if (req.status === 'paid') {
-                    // Grab their custom text, or use default if empty
                     const proofMessage = req.proofText || "Got my Eidi! Thanks! 🎉";
                     actionArea = `
                         <div style="background: #e8f5e9; color: #2e7d32; padding: 10px; text-align: center; border-radius: 8px; font-weight: bold; margin-bottom: 5px;">✅ Salami Sent!</div>
                         <div class="proof-message">💬 "${proofMessage}"</div>
                     `;
                 } else {
-                    actionArea = `<button class="btn-primary" style="padding: 10px 20px; font-size: 1rem; margin:0;" onclick="window.openSendModal('${req.name}', '${req.amount}', '${req.method}', '${req.phone}')">Send Salami</button>`;
+                    actionArea = `<button class="btn-primary" style="padding: 10px 20px; font-size: 1rem; margin:0;" onclick="window.openSendModal('${req.name}', '${req.amount}', '${req.method}', '${req.phone}')">Send Salami 🐼</button>`;
                 }
                 
                 return `
